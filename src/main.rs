@@ -10,6 +10,7 @@ use crate::cli::CleanOpts;
 mod cli;
 mod level;
 mod level_data;
+mod level_region;
 mod logging;
 
 fn main() -> Result<()> {
