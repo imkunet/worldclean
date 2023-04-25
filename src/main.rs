@@ -1,8 +1,8 @@
 use std::sync::Arc;
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 use clap::Parser;
-use log::info;
+use log::{error, info};
 use logging::setup_logging;
 
 use crate::cli::CleanOpts;
@@ -13,7 +13,7 @@ mod level_data;
 mod logging;
 
 fn main() -> Result<()> {
-    setup_logging();
+    setup_logging().context("Failed to initialize logger")?;
 
     let options = Arc::from(CleanOpts::parse());
     info!(
@@ -21,8 +21,9 @@ fn main() -> Result<()> {
         env!("CARGO_PKG_VERSION")
     );
 
-    if !options.world.is_dir() {
-        panic!("The specified world is not a directory!");
+    if let Err(err) = options.world.metadata() {
+        error!("The specified world is not a directory: {}", err);
+        return Err(err.into());
     }
 
     level::process_level(options)?;
