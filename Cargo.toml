@@ -1,0 +1,22 @@
+[package]
+name = "worldclean"
+version = "0.0.1"
+edition = "2021"
+
+[dependencies]
+anvil-region = "0.8.1"
+anyhow = "1.0.70"
+chrono = "0.4.24"
+clap = { version = "4.1.13", features = ["derive", "cargo"] }
+env_logger = "0.10.0"
+log = "0.4.17"
+log-panics = "2.1.0"
+named-binary-tag = "0.6.0"
+rayon = "1.7.0"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true
