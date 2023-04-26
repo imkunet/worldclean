@@ -59,20 +59,25 @@ pub(crate) fn process_level_regions(target_dir: &Path, options: Arc<CleanOpts>) 
 
 fn process_region(region: Region<File>, progress_bar: &Mutex<ProgressBar<Stdout>>) -> Result<()> {
     for chunk in region.into_iter() {
-        let Ok(light_populated) = chunk.get_bool("LightPopulated") else {
-            //warn!("Invalid chunk; could not get LightPopulated! {},{}", chunk.get_i32("xPos").unwrap_or(0), chunk.get_i32("zPos").unwrap_or(0));
+        let Ok(level) = chunk.get_compound_tag("Level") else {
+            warn!("This chunk got no level ???");
             continue;
         };
-        let Ok(terrain_populated) = chunk.get_bool("TerrainPopulated") else {
+
+        let Ok(light_populated) = level.get_bool("LightPopulated") else {
+            warn!("Invalid chunk; could not get LightPopulated! {},{}", chunk.get_i32("xPos").unwrap_or(0), chunk.get_i32("zPos").unwrap_or(0));
+            continue;
+        };
+        let Ok(terrain_populated) = level.get_bool("TerrainPopulated") else {
             warn!("Invalid chunk; could not get TerrainPopulated!");
             continue;
         };
-        let Ok(entities) = chunk.get_compound_tag("Entities") else {
+        let Ok(entities) = level.get_compound_tag_vec("Entities") else {
             warn!("Invalid chunk; could not read Entities!");
             continue;
         };
 
-        if !light_populated && !terrain_populated && entities.iter().count() == 0 {
+        if !light_populated && !terrain_populated && entities.is_empty() {
             // if it looks empty check one last time just to make sure it is actually empty
         }
     }
