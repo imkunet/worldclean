@@ -75,6 +75,8 @@ fn apply_level_data_transformations(data_tag: &CompoundTag) -> Result<CompoundTa
                         "doMobSpawning" => rules.insert_str("doMobSpawning", "false"),
                         "mobGriefing" => rules.insert_str("mobGriefing", "false"),
                         "randomTickSpeed" => rules.insert_str("randomTickSpeed", "0"),
+                        "doFireTick" => rules.insert_str("doFireTick", "false"),
+                        "showDeathMessages" => rules.insert_str("showDeathMessages", "false"),
                         _ => rules.insert(sub_element.0, sub_element.1.clone()),
                     }
                 }
