@@ -56,7 +56,7 @@ fn apply_level_data_transformations(data_tag: &CompoundTag) -> Result<CompoundTa
         match element.0.as_str() {
             "allowCommands" => root.insert_bool("allowCommands", true),
             "generatorName" => root.insert_str("generatorName", "flat"),
-            "generatorOptions" => root.insert_str("generatorOptions", "0;"),
+            "generatorOptions" => root.insert_str("generatorOptions", ";0"),
             "rainTime" => root.insert_i32("rainTime", i32::MAX),
             "thunderTime" => root.insert_i32("thunderTime", i32::MAX),
             "raining" => root.insert_bool("raining", false),

@@ -172,7 +172,11 @@ fn process_region(
 
         let mut level_tag = CompoundTag::new();
         for element in level.iter() {
-            level_tag.insert(element.0, element.1.clone());
+            match element.0.as_str() {
+                "InhabitedTime" => level_tag.insert_i64("InhabitedTime", 0),
+                "LastUpdate" => level_tag.insert_i64("LastUpdate", 0),
+                _ => level_tag.insert(element.0, element.1.clone()),
+            }
         }
 
         let mut chunk_tag = CompoundTag::new();
