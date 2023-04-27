@@ -115,9 +115,9 @@ fn process_region(
     region: Region<File>,
     progress_bar: &Mutex<ProgressBar<Stdout>>,
 ) -> Result<()> {
-    let target_region: Lazy<Region<File>> = Lazy::new();
+    let target_region: Lazy<Mutex<Region<File>>> = Lazy::new();
 
-    /*region
+    region
         .into_iter()
         .enumerate()
         .par_bridge()
@@ -170,82 +170,18 @@ fn process_region(
         chunk_tag.insert_compound_tag("Level", level_tag);
 
         let target = target_region.get_or_create(|| {
-            target_provider.get_region(*region_position)
+            Mutex::from(target_provider.get_region(*region_position)
             .with_context(|| {
                 format!("Unable to create target region {:#?}", region_position)
-            }).unwrap()
+            }).unwrap())
         });
 
         match target.write_chunk(region_chunk_pos, chunk_tag) {
             Ok(()) => {Ok(())}
             Err(_) => bail!("Error in writing chunk"), // TODO: comprehensive error
         }
-    });*/
+    });
 
-    for (i, chunk) in region.into_iter().enumerate() {
-        let x = i % 32;
-        let z = i / 32;
-
-        let region_chunk_pos = RegionChunkPosition::new(x as u8, z as u8);
-
-        let Ok(level) = chunk.get_compound_tag("Level") else {
-            warn!("Skipping invalid chunk with no position or Level tag in region r:{:?} p:{:?}", region_position, region_chunk_pos);
-            prune_stats.increment_invalid();
-            continue;
-        };
-
-        let Ok(light_populated) = level.get_bool("LightPopulated") else {
-            warn!("Invalid chunk; could not get LightPopulated!");
-            prune_stats.increment_invalid();
-            continue;
-        };
-        let Ok(terrain_populated) = level.get_bool("TerrainPopulated") else {
-            warn!("Invalid chunk; could not get TerrainPopulated!");
-            prune_stats.increment_invalid();
-            continue;
-        };
-        let Ok(entities) = level.get_compound_tag_vec("Entities") else {
-            warn!("Invalid chunk; could not read Entities!");
-            prune_stats.increment_invalid();
-            continue;
-        };
-        let Ok(tile_entities) = level.get_compound_tag_vec("TileEntities") else {
-            warn!("Invalid chunk; could not read TileEntities!");
-            prune_stats.increment_invalid();
-            continue;
-        };
-
-        if !light_populated && !terrain_populated && entities.is_empty() && tile_entities.is_empty()
-        {
-            // TODO: if it looks empty check one last time just to make sure it is actually empty
-            prune_stats.increment_empty();
-            continue;
-        }
-
-        let mut level_tag = CompoundTag::new();
-        for element in level.iter() {
-            level_tag.insert(element.0, element.1.clone());
-        }
-
-        let mut chunk_tag = CompoundTag::new();
-        chunk_tag.insert_compound_tag("Level", level_tag);
-
-        let target = match &mut target_region {
-            Some(r) => r,
-            None => target_region.get_or_insert(
-                target_provider
-                    .get_region(*region_position)
-                    .with_context(|| {
-                        format!("Unable to create target region {:#?}", region_position)
-                    })?,
-            ),
-        };
-
-        match target.write_chunk(region_chunk_pos, chunk_tag) {
-            Ok(()) => {}
-            Err(_) => bail!("Error in writing chunk"), // TODO: comprehensive error
-        }
-    }
     increment_progress_bar(progress_bar)?;
 
     Ok(())
