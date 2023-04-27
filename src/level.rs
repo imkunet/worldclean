@@ -39,7 +39,7 @@ pub(crate) fn process_level(options: Arc<CleanOpts>) -> Result<()> {
     let target_dir = ensure_target(options.clone())?;
 
     level_data::process_level_data(&target_dir, options.clone())?;
-    level_region::process_level_regions(&target_dir, options)?;
+    level_region::process_level_regions(&target_dir, options, "region", "Overworld")?;
 
     Ok(())
 }

@@ -15,7 +15,6 @@ use anvil_region::{
     region::Region,
 };
 use anyhow::{bail, Context, Result};
-use lazy_init::Lazy;
 use log::{info, warn};
 use nbt::CompoundTag;
 use pbr::ProgressBar;
@@ -24,6 +23,7 @@ use rayon::prelude::*;
 use crate::cli::CleanOpts;
 
 struct PruneStats {
+    processed_chunks: AtomicU64,
     prune_empty: AtomicU64,
     prune_invalid: AtomicU64,
 }
@@ -31,9 +31,14 @@ struct PruneStats {
 impl PruneStats {
     fn new() -> Self {
         Self {
+            processed_chunks: AtomicU64::new(0),
             prune_empty: AtomicU64::new(0),
             prune_invalid: AtomicU64::new(0),
         }
+    }
+
+    fn increment_processed(&self) {
+        self.processed_chunks.fetch_add(1, Ordering::Relaxed);
     }
 
     fn increment_empty(&self) {
@@ -49,22 +54,28 @@ impl Display for PruneStats {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "Empty: {}, Invalid: {}",
+            "Processed Chunks: {}, Empty: {}, Invalid: {}",
+            self.processed_chunks.load(Ordering::Acquire),
             self.prune_empty.load(Ordering::Acquire),
             self.prune_invalid.load(Ordering::Acquire)
         )
     }
 }
 
-pub(crate) fn process_level_regions(target_dir: &Path, options: Arc<CleanOpts>) -> Result<()> {
-    let path = options.world.join("region");
+pub(crate) fn process_level_regions(
+    target_dir: &Path,
+    options: Arc<CleanOpts>,
+    sub_path: &str,
+    name: &str,
+) -> Result<()> {
+    let path = options.world.join(sub_path);
 
     let provider = FolderRegionProvider::new(
         path.to_str()
             .context("Could not locate region folder path")?,
     );
 
-    let target_region_dir = target_dir.join("region");
+    let target_region_dir = target_dir.join(sub_path);
     let target_provider = &FolderRegionProvider::new(
         target_region_dir
             .to_str()
@@ -78,8 +89,8 @@ pub(crate) fn process_level_regions(target_dir: &Path, options: Arc<CleanOpts>) 
 
     let mut progress_bar = ProgressBar::new(region_positions.len() as u64);
     progress_bar.set_units(pbr::Units::Default);
-    progress_bar.message("⏣ Processing Regions ");
-    progress_bar.format("▕█▓░▏");
+    progress_bar.message(format!("⏣ Processing {} ", name).as_str());
+    progress_bar.format("▕▒✈ ▏");
     progress_bar.tick_format("◜◜◜◠◠◝◝◝◞◞◞◡◡◟◟◟");
 
     let progress_bar = Mutex::new(progress_bar);
@@ -115,14 +126,12 @@ fn process_region(
     region: Region<File>,
     progress_bar: &Mutex<ProgressBar<Stdout>>,
 ) -> Result<()> {
-    let target_region: Lazy<Mutex<Region<File>>> = Lazy::new();
+    let mut target_region: Option<Region<File>> = None;
 
-    region
-        .into_iter()
-        .enumerate()
-        .par_bridge()
-        .try_for_each_with(&target_region, |target_region, (i, chunk)| {
-            let x = i % 32;
+    for (i, chunk) in region.into_iter().enumerate() {
+        prune_stats.increment_processed();
+
+        let x = i % 32;
         let z = i / 32;
 
         let region_chunk_pos = RegionChunkPosition::new(x as u8, z as u8);
@@ -130,35 +139,35 @@ fn process_region(
         let Ok(level) = chunk.get_compound_tag("Level") else {
             warn!("Skipping invalid chunk with no position or Level tag in region r:{:?} p:{:?}", region_position, region_chunk_pos);
             prune_stats.increment_invalid();
-            return Ok(());
+            continue;
         };
 
         let Ok(light_populated) = level.get_bool("LightPopulated") else {
             warn!("Invalid chunk; could not get LightPopulated!");
             prune_stats.increment_invalid();
-            return Ok(());
+            continue;
         };
         let Ok(terrain_populated) = level.get_bool("TerrainPopulated") else {
             warn!("Invalid chunk; could not get TerrainPopulated!");
             prune_stats.increment_invalid();
-            return Ok(());
+            continue;
         };
         let Ok(entities) = level.get_compound_tag_vec("Entities") else {
             warn!("Invalid chunk; could not read Entities!");
             prune_stats.increment_invalid();
-            return Ok(());
+            continue;
         };
         let Ok(tile_entities) = level.get_compound_tag_vec("TileEntities") else {
             warn!("Invalid chunk; could not read TileEntities!");
             prune_stats.increment_invalid();
-            return Ok(());
+            continue;
         };
 
         if !light_populated && !terrain_populated && entities.is_empty() && tile_entities.is_empty()
         {
             // TODO: if it looks empty check one last time just to make sure it is actually empty
             prune_stats.increment_empty();
-            return Ok(());
+            continue;
         }
 
         let mut level_tag = CompoundTag::new();
@@ -169,18 +178,22 @@ fn process_region(
         let mut chunk_tag = CompoundTag::new();
         chunk_tag.insert_compound_tag("Level", level_tag);
 
-        let target = target_region.get_or_create(|| {
-            Mutex::from(target_provider.get_region(*region_position)
-            .with_context(|| {
-                format!("Unable to create target region {:#?}", region_position)
-            }).unwrap())
-        });
+        let target = match &mut target_region {
+            Some(r) => r,
+            None => target_region.get_or_insert(
+                target_provider
+                    .get_region(*region_position)
+                    .with_context(|| {
+                        format!("Unable to create target region {:#?}", region_position)
+                    })?,
+            ),
+        };
 
         match target.write_chunk(region_chunk_pos, chunk_tag) {
-            Ok(()) => {Ok(())}
+            Ok(()) => {}
             Err(_) => bail!("Error in writing chunk"), // TODO: comprehensive error
         }
-    });
+    }
 
     increment_progress_bar(progress_bar)?;
 

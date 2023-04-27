@@ -449,12 +449,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "lazy-init"
-version = "0.5.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9f40963626ac12dcaf92afc15e4c3db624858c92fd9f8ba2125eaada3ac2706f"
-
-[[package]]
 name = "libc"
 version = "0.2.142"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -910,7 +904,6 @@ dependencies = [
  "chrono",
  "clap",
  "env_logger",
- "lazy-init",
  "log",
  "log-panics",
  "named-binary-tag",
