@@ -54,7 +54,7 @@ impl Display for PruneStats {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "Processed Chunks: {}, Empty: {}, Invalid: {}",
+            "Processed Chunks: {}, Deleted Empty Chunks: {}, Deleted Invalid Chunks: {}",
             self.processed_chunks.load(Ordering::Acquire),
             self.prune_empty.load(Ordering::Acquire),
             self.prune_invalid.load(Ordering::Acquire)
