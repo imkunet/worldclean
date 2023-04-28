@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{sync::Arc, time::Instant};
 
 use anyhow::Result;
 use clap::Parser;
@@ -27,7 +27,12 @@ fn main() -> Result<()> {
         panic!("The specified world is not a directory!");
     }
 
+    let start = Instant::now();
     level::process_level(options)?;
+    info!(
+        "Finished process in {:?}",
+        Instant::now().duration_since(start)
+    );
 
     Ok(())
 }
