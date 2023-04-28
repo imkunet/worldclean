@@ -10,7 +10,7 @@ use std::{
 };
 
 use anvil_region::{
-    position::{RegionChunkPosition, RegionPosition},
+    position::RegionPosition,
     provider::{FolderRegionProvider, RegionProvider},
     region::Region,
 };
@@ -20,7 +20,7 @@ use nbt::CompoundTag;
 use pbr::ProgressBar;
 use rayon::prelude::*;
 
-use crate::cli::CleanOpts;
+use crate::{cli::CleanOpts, region_iterator::IntoRegionIterator};
 
 struct PruneStats {
     processed_chunks: AtomicU64,
@@ -128,13 +128,8 @@ fn process_region(
 ) -> Result<()> {
     let mut target_region: Option<Region<File>> = None;
 
-    for (i, chunk) in region.into_iter().enumerate() {
+    for (chunk, region_chunk_pos) in region.into_ext_iter() {
         prune_stats.increment_processed();
-
-        let x = i % 32;
-        let z = i / 32;
-
-        let region_chunk_pos = RegionChunkPosition::new(x as u8, z as u8);
 
         let Ok(level) = chunk.get_compound_tag("Level") else {
             warn!("Skipping invalid chunk with no position or Level tag in region r:{:?} p:{:?}", region_position, region_chunk_pos);

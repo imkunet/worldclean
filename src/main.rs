@@ -12,6 +12,7 @@ mod level;
 mod level_data;
 mod level_region;
 mod logging;
+mod region_iterator;
 
 fn main() -> Result<()> {
     setup_logging();
