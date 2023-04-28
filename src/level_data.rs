@@ -56,7 +56,7 @@ fn apply_level_data_transformations(data_tag: &CompoundTag) -> Result<CompoundTa
         match element.0.as_str() {
             "allowCommands" => root.insert_bool("allowCommands", true),
             "generatorName" => root.insert_str("generatorName", "flat"),
-            "generatorOptions" => root.insert_str("generatorOptions", "0;"),
+            "generatorOptions" => root.insert_str("generatorOptions", ";0"),
             "rainTime" => root.insert_i32("rainTime", i32::MAX),
             "thunderTime" => root.insert_i32("thunderTime", i32::MAX),
             "raining" => root.insert_bool("raining", false),
@@ -75,6 +75,8 @@ fn apply_level_data_transformations(data_tag: &CompoundTag) -> Result<CompoundTa
                         "doMobSpawning" => rules.insert_str("doMobSpawning", "false"),
                         "mobGriefing" => rules.insert_str("mobGriefing", "false"),
                         "randomTickSpeed" => rules.insert_str("randomTickSpeed", "0"),
+                        "doFireTick" => rules.insert_str("doFireTick", "false"),
+                        "showDeathMessages" => rules.insert_str("showDeathMessages", "false"),
                         _ => rules.insert(sub_element.0, sub_element.1.clone()),
                     }
                 }

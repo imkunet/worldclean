@@ -564,6 +564,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b7e5500299e16ebb147ae15a00a942af264cf3688f47923b8fc2cd5858f23ad3"
 
 [[package]]
+name = "pbr"
+version = "1.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ed5827dfa0d69b6c92493d6c38e633bbaa5937c153d0d7c28bf12313f8c6d514"
+dependencies = [
+ "crossbeam-channel",
+ "libc",
+ "winapi",
+]
+
+[[package]]
 name = "proc-macro2"
 version = "1.0.56"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -896,5 +907,6 @@ dependencies = [
  "log",
  "log-panics",
  "named-binary-tag",
+ "pbr",
  "rayon",
 ]
