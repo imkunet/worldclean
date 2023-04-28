@@ -160,9 +160,25 @@ fn process_region(
 
         if !light_populated && !terrain_populated && entities.is_empty() && tile_entities.is_empty()
         {
-            // TODO: if it looks empty check one last time just to make sure it is actually empty
-            prune_stats.increment_empty();
-            continue;
+            let Ok(sections) = level.get_compound_tag_vec("Sections") else {
+                warn!("Invalid chunk; could not read Sections!");
+                prune_stats.increment_invalid();
+                continue;
+            };
+
+            let all_air = sections.par_iter().all(|section| {
+                let Ok(blocks) = section.get_i8_vec("Blocks") else {
+                    warn!("Invalid chunk; blocks does not exist in sections!");
+                    return false;
+                };
+
+                blocks.par_iter().all(|block| *block == 0)
+            });
+
+            if all_air {
+                prune_stats.increment_empty();
+                continue;
+            }
         }
 
         let mut level_tag = CompoundTag::new();
