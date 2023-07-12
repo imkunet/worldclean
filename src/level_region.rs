@@ -137,16 +137,6 @@ fn process_region(
             continue;
         };
 
-        let Ok(light_populated) = level.get_bool("LightPopulated") else {
-            warn!("Invalid chunk; could not get LightPopulated!");
-            prune_stats.increment_invalid();
-            continue;
-        };
-        let Ok(terrain_populated) = level.get_bool("TerrainPopulated") else {
-            warn!("Invalid chunk; could not get TerrainPopulated!");
-            prune_stats.increment_invalid();
-            continue;
-        };
         let Ok(entities) = level.get_compound_tag_vec("Entities") else {
             warn!("Invalid chunk; could not read Entities!");
             prune_stats.increment_invalid();
@@ -158,13 +148,15 @@ fn process_region(
             continue;
         };
 
-        if !light_populated && !terrain_populated && entities.is_empty() && tile_entities.is_empty()
+        if entities.is_empty() && tile_entities.is_empty()
         {
             let Ok(sections) = level.get_compound_tag_vec("Sections") else {
                 warn!("Invalid chunk; could not read Sections!");
                 prune_stats.increment_invalid();
                 continue;
             };
+
+            info!("{}", sections.len());
 
             let all_air = sections.par_iter().all(|section| {
                 let Ok(blocks) = section.get_i8_vec("Blocks") else {
