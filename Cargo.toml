@@ -5,15 +5,15 @@ edition = "2021"
 
 [dependencies]
 anvil-region = "0.8.1"
-anyhow = "1.0.71"
-chrono = "0.4.26"
-clap = { version = "4.3.11", features = ["derive", "cargo"] }
-env_logger = "0.10.0"
-log = "0.4.19"
+anyhow = "1.0.86"
+chrono = "0.4.38"
+clap = { version = "4.5.7", features = ["derive", "cargo"] }
+env_logger = "0.11.3"
+log = "0.4.21"
 log-panics = "2.1.0"
 named-binary-tag = "0.6.0"
 pbr = "1.1.1"
-rayon = "1.7.0"
+rayon = "1.10.0"
 
 [profile.release]
 opt-level = 3

@@ -155,8 +155,6 @@ fn process_region(
                 continue;
             };
 
-            //info!("{}", sections.len());
-
             let all_air = sections.par_iter().all(|section| {
                 let Ok(blocks) = section.get_i8_vec("Blocks") else {
                     warn!("Invalid chunk; blocks does not exist in sections!");
